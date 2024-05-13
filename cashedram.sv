@@ -1,36 +1,36 @@
 module CachedRAM #(
-    parameter DATA_WIDTH = 8,  // Ширина данных
-    parameter ADDR_WIDTH = 8   // Ширина адреса
+    parameter DATA_WIDTH = 8,  // РЁРёСЂРёРЅР° РґР°РЅРЅС‹С…
+    parameter ADDR_WIDTH = 8   // РЁРёСЂРёРЅР° Р°РґСЂРµСЃР°
 ) (
-    input  logic clk,          // тактовый сигнал
-    input  logic reset,        // сброс
-    input  logic [ADDR_WIDTH-2:0] addr,  // входной адресс
-    input  logic [DATA_WIDTH-1:0] dataIn, // входные данные
-    input  logic writeEnable,  // сигнал записи
-    output logic [DATA_WIDTH-1:0] dataOut // выходные данные
+    input  logic clk,          // С‚Р°РєС‚РѕРІС‹Р№ СЃРёРіРЅР°Р»
+    input  logic reset,        // СЃР±СЂРѕСЃ
+    input  logic [ADDR_WIDTH-2:0] addr,  // РІС…РѕРґРЅРѕР№ Р°РґСЂРµСЃСЃ
+    input  logic [DATA_WIDTH-1:0] dataIn, // РІС…РѕРґРЅС‹Рµ РґР°РЅРЅС‹Рµ
+    input  logic writeEnable,  // СЃРёРіРЅР°Р» Р·Р°РїРёСЃРё
+    output logic [DATA_WIDTH-1:0] dataOut // РІС‹С…РѕРґРЅС‹Рµ РґР°РЅРЅС‹Рµ
 );
 
-    // размер кэша
+    // СЂР°Р·РјРµСЂ РєСЌС€Р°
     parameter CACHE_SIZE = 16;
-    // ширина тега
+    // С€РёСЂРёРЅР° С‚РµРіР°
     parameter TAG_WIDTH = ADDR_WIDTH - $clog2(CACHE_SIZE);
-    // количество слов в кэш-линии
+    // РєРѕР»РёС‡РµСЃС‚РІРѕ СЃР»РѕРІ РІ РєСЌС€-Р»РёРЅРёРё
     parameter CACHE_LINE_SIZE = 4;
-    // размер слова (в байтах)
+    // СЂР°Р·РјРµСЂ СЃР»РѕРІР° (РІ Р±Р°Р№С‚Р°С…)
     parameter WORD_SIZE = DATA_WIDTH / 8;
 
-    // определение кэш-памяти
+    // РѕРїСЂРµРґРµР»РµРЅРёРµ РєСЌС€-РїР°РјСЏС‚Рё
     logic [DATA_WIDTH-1:0] cache [0: (1<<ADDR_WIDTH) - 1][0:CACHE_LINE_SIZE-1];
     logic [TAG_WIDTH-1:0] tag [0: (1<<ADDR_WIDTH) - 1];
     logic [ (1<<ADDR_WIDTH) - 1:0] valid;
     
-    // внутренние регистры для управления кэшем
+    // РІРЅСѓС‚СЂРµРЅРЅРёРµ СЂРµРіРёСЃС‚СЂС‹ РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РєСЌС€РµРј
     logic [DATA_WIDTH-1:0] cacheLineData [0:CACHE_LINE_SIZE-1];
     logic [ADDR_WIDTH-1:0] cacheLineAddr;
     logic [TAG_WIDTH-1:0] cacheLineTag;
     logic cacheHit, cacheWriteEnable;
 
-    // обработка чтения из кэша
+    // РѕР±СЂР°Р±РѕС‚РєР° С‡С‚РµРЅРёСЏ РёР· РєСЌС€Р°
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             dataOut <= 0;
@@ -52,7 +52,7 @@ module CachedRAM #(
         end
     end
 
-    // обработка записи в кэш
+    // РѕР±СЂР°Р±РѕС‚РєР° Р·Р°РїРёСЃРё РІ РєСЌС€
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             cacheWriteEnable <= 0;
@@ -69,7 +69,7 @@ module CachedRAM #(
         end
     end
 
-    // обновление кэша после промаха
+    // РѕР±РЅРѕРІР»РµРЅРёРµ РєСЌС€Р° РїРѕСЃР»Рµ РїСЂРѕРјР°С…Р°
     always_comb begin
         if (cacheWriteEnable) begin
             cacheLineData[addr[$clog2(CACHE_LINE_SIZE)-1:0]] <= dataIn;
