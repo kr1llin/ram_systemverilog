@@ -1,83 +1,82 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 11.05.2024 11:55:21
-// Design Name: 
-// Module Name: tb_cashedram
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+module CachedRAM #(
+    parameter DATA_WIDTH = 8,  // Ширина данных
+    parameter ADDR_WIDTH = 8   // Ширина адреса
+) (
+    input  logic clk,          // тактовый сигнал
+    input  logic reset,        // сброс
+    input  logic [ADDR_WIDTH-2:0] addr,  // входной адресс
+    input  logic [DATA_WIDTH-1:0] dataIn, // входные данные
+    input  logic writeEnable,  // сигнал записи
+    output logic [DATA_WIDTH-1:0] dataOut // выходные данные
+);
 
-module CachedRAM_tb;
+    // размер кэша
+    parameter CACHE_SIZE = 16;
+    // ширина тега
+    parameter TAG_WIDTH = ADDR_WIDTH - $clog2(CACHE_SIZE);
+    // количество слов в кэш-линии
+    parameter CACHE_LINE_SIZE = 4;
+    // размер слова (в байтах)
+    parameter WORD_SIZE = DATA_WIDTH / 8;
 
-    localparam DATA_WIDTH = 8;
-    localparam ADDR_WIDTH = 8;
+    // определение кэш-памяти
+    logic [DATA_WIDTH-1:0] cache [0: (1<<ADDR_WIDTH) - 1][0:CACHE_LINE_SIZE-1];
+    logic [TAG_WIDTH-1:0] tag [0: (1<<ADDR_WIDTH) - 1];
+    logic [ (1<<ADDR_WIDTH) - 1:0] valid;
     
-    logic clk;
-    logic reset;
-    logic [ADDR_WIDTH-1:0] addr;
-    logic [DATA_WIDTH-1:0] dataIn;
-    logic writeEnable;
-    logic [DATA_WIDTH-1:0] dataOut;
+    // внутренние регистры для управления кэшем
+    logic [DATA_WIDTH-1:0] cacheLineData [0:CACHE_LINE_SIZE-1];
+    logic [ADDR_WIDTH-1:0] cacheLineAddr;
+    logic [TAG_WIDTH-1:0] cacheLineTag;
+    logic cacheHit, cacheWriteEnable;
 
-    CachedRAM #(
-        .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
-    ) cachedRAM_inst (
-        .clk(clk),
-        .reset(reset),
-        .addr(addr),
-        .dataIn(dataIn),
-        .writeEnable(writeEnable),
-        .dataOut(dataOut)
-    );
-
-    // ���������� �������� ������
-    initial begin
-        clk = 0;
-        forever #5 clk = ~clk;
-    end
-
-    // �����
-    initial begin
-        // �����
-        reset = 1;
-        addr = 0;
-        dataIn = 0;
-        writeEnable = 0;
-        #10 reset = 0;
-
-        // ������ � ���
-        addr = 4;
-        dataIn = 8'hFF;
-        writeEnable = 1;
-        #20;
-
-        // ������ �� ����
-        addr = 4;
-        dataIn = 0;
-        writeEnable = 0;
-        #20;
-
-        // �������� ������
-        if (dataOut !== 8'hFF) begin
-            $display("�������� ������ ��� ������ ����!");
+    // обработка чтения из кэша
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            dataOut <= 0;
+            cacheLineAddr <= 0;
+            cacheLineTag <= 0;
+            cacheHit <= 0;
+            cacheWriteEnable <= 0;
+            valid <= 0;
         end
         else begin
-            $display("������ �������");
+            cacheHit <= (tag[addr[(ADDR_WIDTH-2): $clog2(CACHE_LINE_SIZE)]] == addr[TAG_WIDTH-1:0]) && valid[addr[(ADDR_WIDTH-2): $clog2(CACHE_LINE_SIZE)]];
+            if (cacheHit) begin
+                dataOut <= cache[addr[(ADDR_WIDTH-2): $clog2(CACHE_LINE_SIZE)]][addr[$clog2(CACHE_LINE_SIZE)-1:0]];
+            end
+            else begin
+                cacheLineAddr <= addr;
+                cacheLineTag <= addr[TAG_WIDTH-1:0];
+            end
         end
-
-        $finish;
     end
+
+    // обработка записи в кэш
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            cacheWriteEnable <= 0;
+        end
+        else begin
+            if (cacheHit && writeEnable) begin
+                cache[addr[(ADDR_WIDTH-2): $clog2(CACHE_LINE_SIZE)]][addr[$clog2(CACHE_LINE_SIZE)-1:0]] <= dataIn;
+            end
+            else begin
+                if (writeEnable) begin
+                    cacheWriteEnable <= 1;
+                end
+            end
+        end
+    end
+
+    // обновление кэша после промаха
+    always_comb begin
+        if (cacheWriteEnable) begin
+            cacheLineData[addr[$clog2(CACHE_LINE_SIZE)-1:0]] <= dataIn;
+            cache[addr[(ADDR_WIDTH-2): $clog2(CACHE_LINE_SIZE)]][addr[$clog2(CACHE_LINE_SIZE)-1:0]] <= dataIn;
+            tag[addr[(ADDR_WIDTH-2): $clog2(CACHE_LINE_SIZE)]] <= addr[TAG_WIDTH-1:0];
+            valid[addr[(ADDR_WIDTH-2): $clog2(CACHE_LINE_SIZE)]] <= 1;
+        end
+    end
+
 endmodule
