@@ -8,6 +8,7 @@ module ControlRAM #(
     input  logic [DATA_WIDTH-1:0] dataIn, // входные данные
     input  logic writeEnable,  // сигнал записи
     output logic [DATA_WIDTH-1:0] dataOut // выходные данные
+    
 );
 
     // создание экземпляров модулей кэша и ОЗУ
