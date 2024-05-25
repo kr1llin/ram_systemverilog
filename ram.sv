@@ -24,15 +24,12 @@ module ram #(
     end
 
     // обработка записи в RAM
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin
+    always_ff @(posedge clk or posedge reset) 
+    begin
+        if (reset)
             mem[addr] <= 0;
-        end
-        else begin
-        if (writeEnable) begin
-                        mem[addr] <= dataIn;
-                    end
-                end
-            end
+        else
+        if (writeEnable)  mem[addr] <= dataIn;
+    end
         
 endmodule
