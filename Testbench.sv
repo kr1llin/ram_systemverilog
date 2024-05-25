@@ -1,48 +1,46 @@
-module Testbench;
+module ControlRAM_testbench;
+
 
   ControlRAM #(
-    .ADDR_WIDTH(32),
-    .DATA_WIDTH(8)
+    .DATA_WIDTH(8),
+    .ADDR_WIDTH(32)
   ) control_ram (
-    .clk(clk),
-    .rst(rst),
     .addr(addr),
-    .data_in(data_in),
-    .wr_en(wr_en),
-    .data_out(data_out)
+    .dataIn(dataIn),
+    .writeEnable(writeEnable),
+    .dataOut(dataOut)
   );
 
-  reg clk, rst;
+
+  logic clk, reset;
+
 
   initial begin
     clk <= 0;
     forever #10 clk <= ~clk;
   end
 
+
   initial begin
-    rst <= 1;
-    #100 rst <= 0;
+    reset <= 1;
+    #100 reset <= 0;
   end
 
-  // Запись данных в кэш
+
   initial begin
     @(posedge clk);
-    control_ram.wr_en <= 1;
-    control_ram.addr <= 5;
-    control_ram.data_in <= 8'h56;
+    control_ram.writeEnable <= 1;
+    control_ram.addr <= 32'h00000000;
+    control_ram.dataIn <= 8'h5a;
 
     @(posedge clk);
-    control_ram.wr_en <= 0;
+    control_ram.writeEnable <= 0;
   end
 
-  // Чтение данных из кэша
   initial begin
     @(posedge clk);
-    control_ram.wr_en <= 0;
-    control_ram.addr <= 5;
-
-    @(posedge clk);
-    $display("Data read from the cache: %h", control_ram.data_out);
+    control_ram.writeEnable <= 0;
+    control_ram.addr <= 32'h00000000;
   end
 
 endmodule
