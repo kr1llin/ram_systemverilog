@@ -1,40 +1,47 @@
-module controlRAM #(
-  parameter ADDR_WIDTH = 32,
-  parameter DATA_WIDTH = 8
+module ControlRAM #(
+    parameter DATA_WIDTH = 8,  // Ширина данных
+    parameter ADDR_WIDTH = 32   // Ширина адреса
 ) (
-  input logic clk,
-  input logic rst,
-  input logic [ADDR_WIDTH-1:0] addr,
-  input logic [DATA_WIDTH-1:0] data_in,
-  input logic wr_en,
-  output logic [DATA_WIDTH-1:0] data_out
+    input  logic clk,          // тактовый сигнал
+    input  logic reset,        // сброс
+    input  logic [ADDR_WIDTH-1:0] addr,  // входной адресс
+    input  logic [DATA_WIDTH-1:0] dataIn, // входные данные
+    input  logic writeEnable,  // сигнал записи
+    output logic [DATA_WIDTH-1:0] dataOut // выходные данные
 );
 
-  logic hit;
+    // создание экземпляров модулей кэша и ОЗУ
+    cache #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH)
+    ) cache (
+        .clk(clk),
+        .reset(reset),
+        .addr(addr),
+        .dataIn(dataIn),
+        .writeEnable(writeEnable),
+        .dataOut(cacheDataOut)
+    );
 
-  Cache #(
-    .ADDR_WIDTH(ADDR_WIDTH),
-    .DATA_WIDTH(DATA_WIDTH)
-  ) cache (
-    .clk(clk),
-    .rst(rst),
-    .addr(addr),
-    .data_in(data_in),
-    .wr_en(wr_en),
-    .data_out(data_out),
-    .hit(hit)
-  );
+    ram #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH)
+    ) ram (
+        .clk(clk),
+        .reset(reset),
+        .addr(addr),
+        .dataIn(dataIn),
+        .writeEnable(writeEnable & ~cache.cacheHit),
+        .dataOut(ramDataOut)
+    );
 
-  RAM #(
-    .ADDR_WIDTH(ADDR_WIDTH),
-    .DATA_WIDTH(DATA_WIDTH)
-  ) ram (
-    .clk(clk),
-    .rst(rst),
-    .addr(addr),
-    .data_in(data_in),
-    .wr_en(wr_en & ~hit),
-    .data_out(data_out)
-  );
+    // mux
+    always @(*) begin
+        if (cache.cacheHit) begin
+            dataOut <= cacheDataOut;
+        end else begin
+            dataOut <= ramDataOut;
+        end
+    end
 
 endmodule
