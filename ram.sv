@@ -1,25 +1,38 @@
-module RAM #(
-  parameter ADDR_WIDTH = 32,
-  parameter DATA_WIDTH = 8
+module ram #(
+    parameter DATA_WIDTH = 8,  // Ширина данных
+    parameter ADDR_WIDTH = 32   // Ширина адреса
 ) (
-  input logic clk,
-  input logic rst,
-  input logic [ADDR_WIDTH-1:0] addr,
-  input logic [DATA_WIDTH-1:0] data_in,
-  input logic wr_en,
-  output logic [DATA_WIDTH-1:0] data_out
+    input  logic clk,          // тактовый сигнал
+    input  logic reset,        // сброс
+    input  logic [ADDR_WIDTH-1:0] addr,  // входной адресс
+    input  logic [DATA_WIDTH-1:0] dataIn, // входные данные
+    input  logic writeEnable,  // сигнал записи
+    output logic [DATA_WIDTH-1:0] dataOut // выходные данные
 );
 
-  logic [DATA_WIDTH-1:0] mem [2**ADDR_WIDTH-1:0];
+    // определение RAM
+    logic [DATA_WIDTH-1:0] mem [0: (1<<ADDR_WIDTH) - 1];
 
-  assign data_out = mem[addr];
-
-  always @(posedge clk) begin
-    if (rst) begin
-      mem[addr] <= 0;
-    end else if (wr_en) begin
-      mem[addr] <= data_in;
+    // обработка чтения из RAM
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            dataOut <= 0;
+        end
+        else begin
+            dataOut <= mem[addr];
+        end
     end
-  end
 
+    // обработка записи в RAM
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            mem[addr] <= 0;
+        end
+        else begin
+        if (writeEnable) begin
+                        mem[addr] <= dataIn;
+                    end
+                end
+            end
+        
 endmodule
