@@ -1,18 +1,25 @@
 module ControlRAM_testbench;
 
+    parameter DATA_WIDTH1 = 8;
+    parameter ADDR_WIDTH1 = 32;
+    
+      //logic writeEnable1;
+      logic [ADDR_WIDTH1-1:0] addr1;
+      logic [DATA_WIDTH1-1:0] dataIn1;
+      logic [DATA_WIDTH1-1:0] dataOut1;
 
   ControlRAM #(
     .DATA_WIDTH(8),
     .ADDR_WIDTH(32)
   ) control_ram (
-    .addr(addr),
-    .dataIn(dataIn),
-    .writeEnable(writeEnable),
-    .dataOut(dataOut)
+    .addr(addr1),
+    .dataIn(dataIn1),
+    //.writeEnable(writeEnable1),
+    .dataOut(dataOut1)
   );
 
 
-  logic clk, reset;
+  logic clk, reset, writeEnable1;
 
 
   initial begin
@@ -23,24 +30,24 @@ module ControlRAM_testbench;
 
   initial begin
     reset <= 1;
+    writeEnable1 <= 1;
     #100 reset <= 0;
   end
 
-
   initial begin
     @(posedge clk);
-    control_ram.writeEnable <= 1;
-    control_ram.addr <= 32'h00000000;
-    control_ram.dataIn <= 8'h5a;
+    writeEnable1 <= 1;
+    addr1 <= 32'h00000000;
+    dataIn1 <= 8'h5a;
 
     @(posedge clk);
-    control_ram.writeEnable <= 0;
+    #100 writeEnable1 <= 0;
   end
 
   initial begin
     @(posedge clk);
-    control_ram.writeEnable <= 0;
-    control_ram.addr <= 32'h00000000;
+    #100 writeEnable1 <= 0;
+    addr1 <= 32'h00000000;
   end
 
 endmodule
